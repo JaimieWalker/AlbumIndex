@@ -1,0 +1,10 @@
+require "#{Rails.root}/app/controllers/concerns/LastFM.rb"
+class SearchController < ApplicationController
+	def index
+
+	end
+
+	def resource
+		lastfm_search = LastFM.new(Rails.application.secrets.LASTFM_KEY,request)
+	end
+end

@@ -1,0 +1,11 @@
+<h1>TuneCore Album Index</h1>
+
+<%= form_tag("/resource", method: "get",remote: true) do %>
+  <%= label_tag(:artist, "Artists:") %>
+  <%= text_field_tag(:artist,nil,placeholder: "Artists") %>
+  <%= label_tag(:song, "Songs:") %>
+  <%= text_field_tag(:song, nil, placeholder: "Songs") %>
+  <%= label_tag(:album, "Albums:") %>
+  <%= text_field_tag(:album, nil, placeholder: "Albums") %>
+  <%= submit_tag("Search") %>
+<% end %>
