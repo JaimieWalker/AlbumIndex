@@ -17,8 +17,8 @@ class LastFM
 	def searchArtists
 		urlMethod = "&method=artist.search"
 		artist = '&artist=' + URI.escape(@params["artist"])
-		binding.pry
 		newUrl = @base_url + urlMethod + artist
+		binding.pry
 		
 	end
 

@@ -1,7 +1,7 @@
 require "#{Rails.root}/app/controllers/concerns/LastFM.rb"
 class SearchController < ApplicationController
 	def index
-
+		render "search/index.html.erb"
 	end
 
 	def resource
