@@ -17,9 +17,11 @@ class LastFM
 	def searchArtists
 		urlMethod = "&method=artist.search"
 		artist = '&artist=' + URI.escape(@params["artist"])
-		newUrl = @base_url + urlMethod + artist
+		api_url = URI.parse(@base_url + urlMethod + artist)
+		response = api_request(api_url)
+		# returns json of artists
 		binding.pry
-		
+		return response.body
 	end
 
 	def searchTracks
@@ -28,6 +30,14 @@ class LastFM
 
 	def searchAlbums
 		
+	end
+# returns a HTTP response object
+	def api_request(api_url)
+		http = Net::HTTP.new(api_url.host, api_url.port);
+		req = Net::HTTP::Get.new(api_url.request_uri);
+		req["User-Agent"] = @request.user_agent
+		req["Accept"] = "json"
+		return  http.request(req)
 	end
 
 end
