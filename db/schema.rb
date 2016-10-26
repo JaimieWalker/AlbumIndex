@@ -10,14 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161025181252) do
+ActiveRecord::Schema.define(version: 20161026173434) do
+
+  create_table "album_artists", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
+    t.integer  "artist_id"
+    t.integer  "album_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["album_id"], name: "index_album_artists_on_album_id", using: :btree
+    t.index ["artist_id"], name: "index_album_artists_on_artist_id", using: :btree
+  end
 
   create_table "album_songs", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8" do |t|
     t.integer  "album_id"
     t.integer  "song_id"
+    t.integer  "artist_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_album_songs_on_album_id", using: :btree
+    t.index ["artist_id"], name: "index_album_songs_on_artist_id", using: :btree
     t.index ["song_id"], name: "index_album_songs_on_song_id", using: :btree
   end
 
@@ -52,6 +63,8 @@ ActiveRecord::Schema.define(version: 20161025181252) do
     t.index ["artist_id"], name: "index_songs_on_artist_id", using: :btree
   end
 
+  add_foreign_key "album_artists", "albums"
+  add_foreign_key "album_artists", "artists"
   add_foreign_key "album_songs", "albums"
   add_foreign_key "album_songs", "songs"
 end
