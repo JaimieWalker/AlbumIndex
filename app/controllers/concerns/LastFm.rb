@@ -22,29 +22,50 @@ class LastFM < ApplicationController
 				@albums = searchAlbums
 			end
 		end
-		binding.pry
 		
 	end
-	# Takes either an artist passed in or the artist that was passed in for the request
-
+	# Searches all songs and takes either an artist passed in or the artist that was passed in from the request, returns a json of artists
 	def searchArtists(artist = @params["artist"])
 		autocorrect = "&autocorrect=1"
 		urlMethod = "&method=artist.search"
-		artist_url_escaped = "&artist=" + URI.escape(artist)
-		api_url = URI.parse(@base_url + urlMethod + artist_url_escaped + autocorrect)
+		artist_name_escaped = "&artist=" + URI.escape(artist)
+		api_url = URI.parse(@base_url + urlMethod + artist_name_escaped + autocorrect)
 		response = api_request(api_url)
-		json_artists = JSON.parse(response.body)
-		
-		artists_arr = json_artists["results"]["artistmatches"]["artist"]
-		create_artists(artists_arr);
-		# returns json of artists
-		return response.body
+		if !response["error"]
+			json_artists = JSON.parse(response.body)
+			arr = json_artists["results"]["artistmatches"]["artist"]
+			arr.each do |artist|
+				create_artist(artist)	
+			end	
+		end
 	end
-
+# Takes an artist name and creates one in the database
+	def create_artist(artist)
+		artist_info = artist_get_info(artist)
+		if !artist_info.nil? && !artist_info["error"]
+			artist_info = artist_info["artist"]
+			artist = Artist.find_or_create_by(name: artist_info["name"],mbid: artist_info["mbid"]) do |current_artist|
+				current_artist.bio = artist_info["bio"]["content"]
+				current_artist.image_url = artist_info["image"][2]["#text"];
+			end
+		end
+		return artist
+	end
+# Just makes an api call to artist.getinfo and returns the JSON parsed result
+	def artist_get_info(artist)
+		autocorrect = "&autocorrect=1"
+		urlMethod = "&method=artist.getinfo"
+		artist_name_escaped = "&artist=" + URI.escape(artist["name"])
+		api_url = URI.parse(@base_url + urlMethod + artist_name_escaped + autocorrect)
+		response = api_request(api_url)
+		return JSON.parse(response.body)
+	end
+# Searches all songs that match the name and takes a song that was passed in or from the request
 	def searchSongs(song = @params["song"])
 		artist = ""
 		autocorrect = "&autocorrect=1";
 		urlMethod = "&method=track.search"
+
 		# if !@params["artist"].nil? && @params["artist"].size > 0
 		# 	urlMethod = "&method=track.getinfo"
 		# 	artist = "&artist=" + URI.escape(@params["artist"])
@@ -54,10 +75,38 @@ class LastFM < ApplicationController
 		
 		response = api_request(api_url)
 		json_songs = JSON.parse(response.body)
-		song_arr = json_songs["results"]["trackmatches"]["track"]
-		# create_songs(song_arr)
+		if !json_songs["error"]
+			song_arr = json_songs["results"]["trackmatches"]["track"]
+			create_songs(song_arr)
+
+		# elsif !json_songs["error"] && urlMethod == "&method=track.getinfo"
+		# 		song_get_info(json_songs["track"])
+		end
 		# returns json of tracks/songs
 		return response.body
+	end
+
+# calls track.get_info to get the data about a song
+	def song_get_info(song)
+		artist = ""
+		autocorrect = "&autocorrect=1";
+		urlMethod = "&method=track.search"
+		if !@params["artist"].nil? && @params["artist"].size > 0
+			urlMethod = "&method=track.getinfo"
+			artist = "&artist=" + URI.escape(@params["artist"])
+		end
+		track_url_escaped = "&track=" + URI.escape(song)
+		api_url = URI.parse(@base_url + urlMethod + track_url_escaped + artist + autocorrect)
+		
+
+		artist = Artist.find_or_create_by(name: song["artist"]["name"], mbid: song["artist"]["mbid"])
+		
+		album = Album.find_or_create_by(name: song["album"]["title"],mbid: song["album"]["mbid"], artist_id: artist.id) do |current_album|
+			current_album.image_url = song["album"]["image"][2]	
+		end
+		song = Song.find_or_create_by(name: song["name"], mbid: song["mbid"], artist_id: artist.id, album_id: album.id ) do |current_song| 
+			current_song.description = song["wiki"]["content"]
+		end
 	end
 
 	def searchAlbums(album = @params["album"])
@@ -87,14 +136,7 @@ class LastFM < ApplicationController
 		return  http.request(req)
 	end
 
-	def create_artists(arr)
-		arr.each do |artist|
-			Artist.find_or_create_by(name:artist["name"] ) do |current_artist|
-				current_artist.mbid = artist["mbid"]
-				current_artist.image_url = artist["image"][2]["#text"]
-			end
-		end
-	end
+	
 
 	def create_albums(arr)
 		# When I create an album, get all of the tracks in the album
@@ -106,7 +148,6 @@ class LastFM < ApplicationController
 				current_album.mbid = album["mbid"]
 			end
 			album_get_info(artist,album_db)
-			binding.pry
 			artist.albums << album_db
 
 		end
@@ -122,7 +163,7 @@ class LastFM < ApplicationController
 		end
 	end
 
-	def create_songs_from_info(arr,artist,album)
+	def create_songs_from_album_info(arr,artist,album)
 		arr.each do |track|
 			if artist.mbid != track["artist"]["mbid"]
 				artist = Artist.find_or_create_by(name: track["artist"]["name"],mbid: track["artist"]["mbid"])
@@ -143,7 +184,7 @@ class LastFM < ApplicationController
 		# If there is no error
 		if !album_info["error"]
 			tracks_in_album = album_info["album"]["tracks"]["track"]
-			create_songs_from_info(tracks_in_album,artist,album)
+			create_songs_from_album_info(tracks_in_album,artist,album)
 		end
 		
 	end

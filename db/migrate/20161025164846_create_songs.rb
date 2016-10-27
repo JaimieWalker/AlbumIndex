@@ -6,6 +6,7 @@ class CreateSongs < ActiveRecord::Migration[5.0]
       t.string :mbid
       t.references :artist
       t.string :image_url
+      t.text :description
       t.timestamps
     end
   end
