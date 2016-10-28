@@ -2,9 +2,9 @@ class CreateSongs < ActiveRecord::Migration[5.0]
   def change
     create_table :songs do |t|
       t.string :name
-      t.references :album
+      t.integer :album_id
       t.string :mbid
-      t.references :artist
+      t.integer :artist_id
       t.string :image_url
       t.text :description
       t.timestamps

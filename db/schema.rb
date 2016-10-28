@@ -37,8 +37,9 @@ ActiveRecord::Schema.define(version: 20161026173434) do
     t.integer  "artist_id"
     t.string   "mbid"
     t.string   "image_url"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.text     "description", limit: 65535
+    t.datetime "created_at",                null: false
+    t.datetime "updated_at",                null: false
     t.index ["artist_id"], name: "index_albums_on_artist_id", using: :btree
   end
 

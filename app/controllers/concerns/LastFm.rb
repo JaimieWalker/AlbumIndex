@@ -31,13 +31,15 @@ class LastFM < ApplicationController
 		artist_name_escaped = "&artist=" + URI.escape(artist)
 		api_url = URI.parse(@base_url + urlMethod + artist_name_escaped + autocorrect)
 		response = api_request(api_url)
+		searched_artists = []
 		if !response["error"]
 			json_artists = JSON.parse(response.body)
 			arr = json_artists["results"]["artistmatches"]["artist"]
 			arr.each do |artist|
-				create_artist(artist)	
+				searched_artists << create_artist(artist["name"])	
 			end	
 		end
+		return searched_artists
 	end
 # Takes an artist name and creates one in the database
 	def create_artist(artist)
@@ -55,77 +57,78 @@ class LastFM < ApplicationController
 	def artist_get_info(artist)
 		autocorrect = "&autocorrect=1"
 		urlMethod = "&method=artist.getinfo"
-		artist_name_escaped = "&artist=" + URI.escape(artist["name"])
+		artist_name_escaped = "&artist=" + URI.escape(artist)
 		api_url = URI.parse(@base_url + urlMethod + artist_name_escaped + autocorrect)
 		response = api_request(api_url)
 		return JSON.parse(response.body)
 	end
 # Searches all songs that match the name and takes a song that was passed in or from the request
 	def searchSongs(song = @params["song"])
-		artist = ""
+		artist_name = @params["artist"] && @params["artist"].size > 0 ? URI.escape(@params["artist"]) : ""
 		autocorrect = "&autocorrect=1";
 		urlMethod = "&method=track.search"
-
-		# if !@params["artist"].nil? && @params["artist"].size > 0
-		# 	urlMethod = "&method=track.getinfo"
-		# 	artist = "&artist=" + URI.escape(@params["artist"])
-		# end
 		track_url_escaped = "&track=" + URI.escape(song)
-		api_url = URI.parse(@base_url + urlMethod + track_url_escaped + artist + autocorrect)
-		
+		api_url = URI.parse(@base_url + urlMethod + track_url_escaped + autocorrect + "&artist=" + artist_name)
 		response = api_request(api_url)
+		songs = []
+		# Returns a list of songs
 		json_songs = JSON.parse(response.body)
 		if !json_songs["error"]
-			song_arr = json_songs["results"]["trackmatches"]["track"]
-			create_songs(song_arr)
-
-		# elsif !json_songs["error"] && urlMethod == "&method=track.getinfo"
-		# 		song_get_info(json_songs["track"])
+			arr = json_songs["results"]["trackmatches"]["track"]
+			arr.each do |song|
+				artist = create_artist(song["artist"])
+				song_info = song_get_info(song["name"],artist.name)
+				if !song_info["error"] && song_info["track"]["album"]
+					album_name = song_info["track"]["album"]["title"]
+					album = create_album(album_name,artist.name)
+					songs << create_song(song["name"],artist,album)
+				end
+			end
 		end
-		# returns json of tracks/songs
-		return response.body
+		return songs
+	end
+	# takes an active record artist, album and song name
+	def create_song(song,artist,album)
+		song_info = song_get_info(song,artist.name)
+		if !song_info["error"] && song
+			ar_song = Song.find_or_create_by(name: song, artist_id: artist.id, album_id: album.id) do |current_song|
+				current_song.mbid = song_info["track"]["mbid"]
+				if s = song_info["track"]["wiki"]
+					current_song.description = s["content"]	
+				end
+			end
+		end
+		return ar_song
 	end
 
-# calls track.get_info to get the data about a song
-	def song_get_info(song)
-		artist = ""
+# Takes a song name and an artist name
+	def song_get_info(song,artist)
+		urlMethod = "&method=track.getInfo"
 		autocorrect = "&autocorrect=1";
-		urlMethod = "&method=track.search"
-		if !@params["artist"].nil? && @params["artist"].size > 0
-			urlMethod = "&method=track.getinfo"
-			artist = "&artist=" + URI.escape(@params["artist"])
-		end
-		track_url_escaped = "&track=" + URI.escape(song)
-		api_url = URI.parse(@base_url + urlMethod + track_url_escaped + artist + autocorrect)
-		
-
-		artist = Artist.find_or_create_by(name: song["artist"]["name"], mbid: song["artist"]["mbid"])
-		
-		album = Album.find_or_create_by(name: song["album"]["title"],mbid: song["album"]["mbid"], artist_id: artist.id) do |current_album|
-			current_album.image_url = song["album"]["image"][2]	
-		end
-		song = Song.find_or_create_by(name: song["name"], mbid: song["mbid"], artist_id: artist.id, album_id: album.id ) do |current_song| 
-			current_song.description = song["wiki"]["content"]
-		end
+		song_escaped = URI.escape(song)
+		artist_escaped = URI.escape(artist)
+		api_url = URI.parse(@base_url + urlMethod +"&track=#{song_escaped}"  + autocorrect + "&artist=#{artist_escaped}")
+		response = api_request(api_url)
+		return JSON.parse(response.body)
 	end
 
 	def searchAlbums(album = @params["album"])
 		urlMethod = "&method=album.search"
-		artist = ""
+		artist = @params["artist"] && @params["artist"].size > 0 ? URI.escape(@params["artist"]) : ""
 		autocorrect = "&autocorrect=1";
-		# if !@params["artist"].nil? && @params["artist"].size > 0
-		# 	urlMethod = "&method=album.getinfo"
-		# 	artist = "&artist=" + URI.escape(@params["artist"])
-		# end
 		album_url_escaped = "&album=" + URI.escape(album)
-		api_url = URI.parse(@base_url + urlMethod +album_url_escaped + autocorrect + artist)
-		
+		api_url = URI.parse(@base_url + urlMethod + album_url_escaped + autocorrect + artist)
 		response = api_request(api_url)
-		json_albums = JSON.parse(response.body)
-		album_arr = json_albums["results"]["albummatches"]["album"]
-		create_albums(album_arr)
-		# returns json of albums
-		return response.body
+		albums = []
+		if !response["error"]
+			json_albums = JSON.parse(response.body)
+			arr = json_albums["results"]["albummatches"]["album"]
+			arr.each do |album|
+			 albums <<	create_album(album["name"],album["artist"])
+			end
+		end
+		# Returns a list of albums
+		return albums
 	end
 # returns a HTTP response object
 	def api_request(api_url)
@@ -133,60 +136,52 @@ class LastFM < ApplicationController
 		req = Net::HTTP::Get.new(api_url.request_uri);
 		req["User-Agent"] = @request.user_agent
 		req["Accept"] = "json"
-		return  http.request(req)
+		begin
+			res =  http.request(req)
+		rescue Errno::ETIMEDOUT => e
+			sleep(3)
+			retry
+		ensure
+			return res		
+		end
 	end
 
 	
-
-	def create_albums(arr)
-		# When I create an album, get all of the tracks in the album
-		arr.each do |album|
-			artist = Artist.find_or_create_by(name: album["artist"])
-			album_db = Album.find_or_create_by(name: album["name"]) do |current_album|
-				current_album.artist_id = artist.id
-				current_album.image_url = album["image"][2]["#text"]
-				current_album.mbid = album["mbid"]
+# Takes an album name and artist name
+	def create_album(album,artist)
+	# returns an album with all its songs
+		album_info = album_get_info(album,artist)
+		if !album_info["error"]
+			ar_artist = create_artist(artist)
+			ar_album = Album.find_or_create_by(name: album_info["album"]["name"],artist_id: ar_artist.id) do |current_album|
+				current_album.image_url = album_info["album"]["image"][2]["#text"]
+				current_album.mbid = album_info["album"]["mbid"]
+				if a = album_info["album"]["wiki"]
+					current_album.description = a["content"]	
+				end
 			end
-			album_get_info(artist,album_db)
-			artist.albums << album_db
-
+			tracks_in_album = album_info["album"]["tracks"]["track"]
+			tracks_in_album.each do |track|
+				begin
+					ar_album.songs << create_song(track["name"],ar_artist,ar_album)				
+				rescue ActiveRecord::AssociationTypeMismatch => e
+					next
+				end
+			end
+			ar_artist.albums << ar_album
 		end
+		return ar_album
 	end
 
-	def create_songs(arr)
-		arr.each do |track|
-			artist = Artist.find_or_create_by(name: track["artist"])
-			artist.songs << Song.find_or_create_by(name: track["name"],artist_id: artist.id) do |current_track|
-				current_track.mbid = track["mbid"]
-				current_track.image_url = track["image"][2]["#text"]
-			end
-		end
-	end
-
-	def create_songs_from_album_info(arr,artist,album)
-		arr.each do |track|
-			if artist.mbid != track["artist"]["mbid"]
-				artist = Artist.find_or_create_by(name: track["artist"]["name"],mbid: track["artist"]["mbid"])
-			end
-			album.songs << Song.find_or_create_by(name: track["name"],artist_id: artist.id, album_id: album.id)				
-		end
-	end
 # Need to finish the get info for each
-	def album_get_info(artist,album)
+	def album_get_info(album,artist)
 		urlMethod = "&method=album.getinfo"
-		artist_name = URI.escape(artist.name)
 		autocorrect = "&autocorrect=1";
-		artist_escaped = "&artist=#{artist_name}"
-		album_url_escaped = "&album=" + URI.escape(album.name)
+		artist_escaped = "&artist=" + URI.escape(artist)
+		album_url_escaped = "&album=" + URI.escape(album)
 		api_url = URI.parse(@base_url + urlMethod + album_url_escaped + autocorrect + artist_escaped)
 		response = api_request(api_url)
-		album_info = JSON.parse(response.body)
-		# If there is no error
-		if !album_info["error"]
-			tracks_in_album = album_info["album"]["tracks"]["track"]
-			create_songs_from_album_info(tracks_in_album,artist,album)
-		end
-		
+		return JSON.parse(response.body)
 	end
 
 end
