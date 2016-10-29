@@ -6,5 +6,6 @@ class SearchController < ApplicationController
 
 	def resource
 		lastfm_search = LastFM.new(Rails.application.secrets.LASTFM_KEY,request)
+		binding.pry
 	end
 end

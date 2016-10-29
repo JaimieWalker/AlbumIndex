@@ -11,16 +11,18 @@ class LastFM < ApplicationController
 		@params = request.params
 		
 		ActiveRecord::Base.transaction do
-			if !@params["artist"].nil? && @params["artist"].size > 0
-				@artists = searchArtists
-			end
-			if !@params["song"].nil? && @params["song"].size > 0
-				@tracks = searchSongs
-			end
 
-			if !@params["album"].nil? && @params["album"].size > 0
-				@albums = searchAlbums
-			end
+				if !@params["artist"].nil? && @params["artist"].size > 0
+					@artists = searchArtists
+				end
+
+				if !@params["song"].nil? && @params["song"].size > 0
+					@tracks = searchSongs
+				end
+
+				if !@params["album"].nil? && @params["album"].size > 0
+					@albums = searchAlbums
+				end
 		end
 		
 	end
@@ -36,7 +38,11 @@ class LastFM < ApplicationController
 			json_artists = JSON.parse(response.body)
 			arr = json_artists["results"]["artistmatches"]["artist"]
 			arr.each do |artist|
-				searched_artists << create_artist(artist["name"])	
+				if searched_artists.size < 5
+					searched_artists << create_artist(artist["name"])
+				else	
+					return searched_artists
+				end
 			end	
 		end
 		return searched_artists
@@ -76,12 +82,16 @@ class LastFM < ApplicationController
 		if !json_songs["error"]
 			arr = json_songs["results"]["trackmatches"]["track"]
 			arr.each do |song|
-				artist = create_artist(song["artist"])
-				song_info = song_get_info(song["name"],artist.name)
-				if !song_info["error"] && song_info["track"]["album"]
-					album_name = song_info["track"]["album"]["title"]
-					album = create_album(album_name,artist.name)
-					songs << create_song(song["name"],artist,album)
+				if songs.size < 5
+					artist = create_artist(song["artist"])
+					song_info = song_get_info(song["name"],artist.name)
+					if !song_info["error"] && song_info["track"]["album"]
+						album_name = song_info["track"]["album"]["title"]
+						album = create_album(album_name,artist.name)
+						songs << create_song(song["name"],artist,album)
+					end
+				else
+					return songs
 				end
 			end
 		end
@@ -124,7 +134,11 @@ class LastFM < ApplicationController
 			json_albums = JSON.parse(response.body)
 			arr = json_albums["results"]["albummatches"]["album"]
 			arr.each do |album|
-			 albums <<	create_album(album["name"],album["artist"])
+				if albums.size < 5
+			 		albums <<	create_album(album["name"],album["artist"])
+			 	else
+			 		return albums
+				end
 			end
 		end
 		# Returns a list of albums
