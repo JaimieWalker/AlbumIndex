@@ -11,21 +11,21 @@ class LastFM < ApplicationController
 
 		@params = request.params
 		# Thread.new do
-			ActiveRecord::Base.transaction do
-				if !@params["artist"].nil? && @params["artist"].size > 0
-					@artists = search_artists
-					@artists = add_artists_to_db(@artists)
-				end
-				if !@params["song"].nil? && @params["song"].size > 0
-					@tracks = search_songs
-					@tracks = add_tracks_to_db(@songs)
-				end
+		# 	ActiveRecord::Base.transaction do
+		# 		if !@params["artist"].nil? && @params["artist"].size > 0
+		# 			@artists = search_artists
+		# 			@artists = add_artists_to_db(@artists)
+		# 		end
+		# 		if !@params["song"].nil? && @params["song"].size > 0
+		# 			@tracks = search_songs
+		# 			@tracks = add_tracks_to_db(@songs)
+		# 		end
 
-				if !@params["album"].nil? && @params["album"].size > 0
-					@albums = search_albums
-					@albums = add_albums_to_db(@albums)
-				end
-			end
+		# 		if !@params["album"].nil? && @params["album"].size > 0
+		# 			@albums = search_albums
+		# 			@albums = add_albums_to_db(@albums)
+		# 		end
+		# 	end
 		# end
 	end
 
