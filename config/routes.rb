@@ -3,5 +3,5 @@ Rails.application.routes.draw do
   get '/resource', to: "search#resource"
   
   root to: 'application#index#index'
-  get "*path" => "application#index"
+  get "*path" => "application#index", format: false
 end
