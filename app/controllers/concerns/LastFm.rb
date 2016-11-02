@@ -4,7 +4,7 @@ require "json"
 require "open-uri"
 
 class LastFM < ApplicationController
-	attr_accessor :base_url, :request,:params,:artists,:tracks,:albums
+	attr_accessor :base_url, :request,:params
 	def initialize(api_key,request)
 		@base_url = "http://ws.audioscrobbler.com/2.0/?api_key=#{api_key}&format=json"
 		@request = request
@@ -13,17 +13,15 @@ class LastFM < ApplicationController
 		# Thread.new do
 		# 	ActiveRecord::Base.transaction do
 		# 		if !@params["artist"].nil? && @params["artist"].size > 0
-		# 			@artists = search_artists
-		# 			@artists = add_artists_to_db(@artists)
+		# 			 add_artists_to_db(search_artists)
+					 
 		# 		end
 		# 		if !@params["song"].nil? && @params["song"].size > 0
-		# 			@tracks = search_songs
-		# 			@tracks = add_tracks_to_db(@songs)
+		# 			 add_tracks_to_db(search_songs)
 		# 		end
 
 		# 		if !@params["album"].nil? && @params["album"].size > 0
-		# 			@albums = search_albums
-		# 			@albums = add_albums_to_db(@albums)
+		# 			 add_albums_to_db(search_albums)
 		# 		end
 		# 	end
 		# end
@@ -94,7 +92,6 @@ def search_songs(song = @params["song"])
 	json_songs = JSON.parse(response.body)
 	if (!json_songs["error"])
 		# Thread.new  {add_tracks_to_db(json_songs)}
-		
 		return json_songs
 	else 
 		return nil
@@ -119,18 +116,20 @@ def add_tracks_to_db(songs)
 		end
 		return tracks.uniq
 	end
-	# takes an active record artist, album and song name
+	# takes an active record artist, album and a string song name
 	def create_song(song,artist,album)
 		song_info = get_song_info(song,artist.name)
 		if !song_info["error"] && song
 			ar_song = Song.find_or_create_by(name: song, artist_id: artist.id, album_id: album.id) do |current_song|
 				current_song.mbid = song_info["track"]["mbid"]
+					current_song.image_url = album.image_url
 				if s = song_info["track"]["wiki"]
 					current_song.description = s["content"]	
 				end
 			end
 		end
-		album.songs << ar_song if !album.songs.include?(ar_song)		
+		album.songs << ar_song if !album.songs.include?(ar_song)
+			
 		return ar_song
 	end
 	
@@ -192,7 +191,7 @@ def add_albums_to_db(albums)
 		begin
 			res =  http.request(req)
 		rescue Errno::ETIMEDOUT => e
-			sleep(3)
+			sleep(2)
 			retry
 		ensure
 			return res		
@@ -211,14 +210,16 @@ def add_albums_to_db(albums)
 					current_album.description = a["content"]	
 				end
 			end
+
 			tracks_in_album = album_info["album"]["tracks"]["track"]
 			tracks_in_album.each do |track|
-				# begin
+				begin
 					song = create_song(track["name"],ar_artist,ar_album)
 					!ar_album.songs.include?(song) ? ar_album.songs << song : next				
-				# rescue ActiveRecord::AssociationTypeMismatch => e
-					# next
-				# end
+				rescue ActiveRecord::AssociationTypeMismatch => e
+					# If we reach this point, that means the track wasn't found in the api
+					next
+				end
 			end
 			ar_artist.albums << ar_album
 		end
@@ -236,22 +237,50 @@ def add_albums_to_db(albums)
 		return JSON.parse(response.body)
 	end	
 
-	def find_by_artist_song(song_name,album_name)
-	   	song_info = get_song_info(song_name,album_name)
-	    album = create_album(song_info["track"]["album"]["title"],song_info["track"]["artist"]["name"])
+	def find_songs_by_artist
+		artist = Artist.find_by(name: @params["artist"])
+		if artist
+			return artist.songs
+		else
+			urlMethod = "&method=artist.getTopAlbums"
+			autocorrect = "&autocorrect=1";
+			artist_escaped = "&artist=" + URI.escape(@params["artist"])
+			api_url = URI.parse(@base_url + urlMethod  + autocorrect + artist_escaped)
+			response = api_request(api_url)
+			json = JSON.parse(response.body)
+			albums = json["topalbums"]["album"]
+			albums.each do |album|
+				create_album(album["name"],album["artist"]["name"])
+			end
+		return artist.songs
+		end
 	end
 	
-	def find_by_song_album(song_name,album_name)
-		tracks = search_songs(song_name)
-		track_list = tracks["results"]["trackmatches"]["track"]
-		track_list.each do |track|
-			song_name = get_correct_song_name(song_name,track["artist"])
-			song_name = song_name["corrections"]["correction"]["track"]["name"]
-			song_info = get_song_info(track["name"],track["artist"])
-			album = create_album(song_info["track"]["album"]["title"],song_info["track"]["album"]["artist"])
-			song = Song.find_by(name: song_name)
-			return song if song.album == album
-			end
-		return nil
+	def find_songs_by_album
+		songs = []
+		like_album = "%#{@params['album']}%"
+		albums = Album.where("name LIKE ? ", like_album)
+		if albums.size  == 0
+			albums = add_albums_to_db(search_albums(@params["album"]))
+		end	
+		albums = albums.compact
+		albums.each do |album|
+			songs += album.songs
+		end
+	end
+
+	def search_results
+		like_song = "%#{"@params['song']"}%"
+		songs = Song.where("name LIKE ? ", like_song)
+		if songs != nil && songs.size == 0 && @params["song"]
+			songs = add_tracks_to_db(search_songs(@params["song"]))
+			binding.pry	
+		elsif @params["album"]
+			songs = find_songs_by_album
+		elsif @params["artist"]
+			songs = find_songs_by_artist
+		end
+
+		return songs.uniq
 	end
 end
