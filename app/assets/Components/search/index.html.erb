@@ -10,3 +10,14 @@
 	<input type="text" ng-model="formData.album" name="album" placeholder="Enter the name of an Album"><br>
 	<input type="submit" value="Search">
 </form>
+
+<ol>
+	<section ng-repeat="result in songs" ng-model="songs" ng-show="songs.length > 0">
+			<a ng-href="/{{result.song.id}}"></a> <li  ng-bind="'Song: ' + result.song.name"></li>	
+		<details>
+			<summary ng-bind="song.description"></summary>
+			<span  ng-bind="'Artist: ' + result.artist.name"> </span><br>
+			<span ng-bind="'Album: ' + result.album.name"></span><br><br>
+		</details>
+	</section>
+</ol>

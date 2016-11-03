@@ -8,6 +8,7 @@ class SearchController < ApplicationController
 		request.params.delete_if {|k,v| v == ""}
 		lastfm_search = LastFM.new(Rails.application.secrets.LASTFM_KEY,request)
 		songs = lastfm_search.search_results
+		render json: songs
 	end
 
 	

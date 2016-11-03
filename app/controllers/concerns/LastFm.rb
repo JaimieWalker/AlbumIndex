@@ -248,11 +248,15 @@ def add_albums_to_db(albums)
 			api_url = URI.parse(@base_url + urlMethod  + autocorrect + artist_escaped)
 			response = api_request(api_url)
 			json = JSON.parse(response.body)
-			albums = json["topalbums"]["album"]
-			albums.each do |album|
-				create_album(album["name"],album["artist"]["name"])
+			if !json["error"]
+				albums = json["topalbums"]["album"]
+				albums.each do |album|
+					create_album(album["name"],album["artist"]["name"])
+				end
+					return artist.songs
+			else
+				return []
 			end
-		return artist.songs
 		end
 	end
 	
@@ -267,20 +271,30 @@ def add_albums_to_db(albums)
 		albums.each do |album|
 			songs += album.songs
 		end
+		return songs
 	end
 
 	def search_results
-		like_song = "%#{"@params['song']"}%"
+		like_song = "%#{@params['song']}%"
 		songs = Song.where("name LIKE ? ", like_song)
 		if songs != nil && songs.size == 0 && @params["song"]
 			songs = add_tracks_to_db(search_songs(@params["song"]))
-			binding.pry	
 		elsif @params["album"]
 			songs = find_songs_by_album
 		elsif @params["artist"]
 			songs = find_songs_by_artist
 		end
+		results = songs_to_json(songs.to_a.uniq)
+		return  results
+	end
 
-		return songs.uniq
+	def songs_to_json(songs)
+		data = []
+		songs.each do |song|
+			 data << {"song" => song, 
+			           "album" => song.album,
+			           "artist" => song.artist}
+		end
+		return data.to_json
 	end
 end

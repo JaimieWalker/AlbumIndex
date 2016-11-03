@@ -8,6 +8,10 @@ app.config(function($stateProvider, $urlRouterProvider, $locationProvider){
 			url: '/',
 			templateUrl: "search/index.html",
 			controller: "searchCtrl"
+		}).state("home.1",{
+			controller: "searchCtrl",
+			parent: "home",
+			url: "/{id}"
 		})
 
 })
