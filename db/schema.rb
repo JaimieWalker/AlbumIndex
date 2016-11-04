@@ -57,12 +57,11 @@ ActiveRecord::Schema.define(version: 20161026173434) do
     t.integer  "album_id"
     t.string   "mbid"
     t.integer  "artist_id"
+    t.string   "url"
     t.string   "image_url"
     t.text     "description", limit: 65535
     t.datetime "created_at",                null: false
     t.datetime "updated_at",                null: false
-    t.index ["album_id"], name: "index_songs_on_album_id", using: :btree
-    t.index ["artist_id"], name: "index_songs_on_artist_id", using: :btree
   end
 
   add_foreign_key "album_artists", "albums"

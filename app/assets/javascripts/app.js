@@ -1,6 +1,7 @@
 var app = angular.module("Tune_Core_Search",
 	["ngResource","ui.router","templates"]);
 
+
 app.config(function($stateProvider, $urlRouterProvider, $locationProvider){
 	$locationProvider.html5Mode(true);
 	$stateProvider
@@ -8,10 +9,10 @@ app.config(function($stateProvider, $urlRouterProvider, $locationProvider){
 			url: '/',
 			templateUrl: "search/index.html",
 			controller: "searchCtrl"
-		}).state("home.1",{
-			controller: "searchCtrl",
-			parent: "home",
-			url: "/{id}"
+		}).state("show",{
+			controller: "showCtrl",
+			url: "/{name}/{id}",
+			templateUrl: "search/result.html"
 		})
 
 })

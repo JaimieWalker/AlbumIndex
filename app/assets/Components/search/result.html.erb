@@ -1,0 +1,45 @@
+<%= stylesheet_link_tag  'show' %>
+
+	<div class="content">
+		
+<a target="_blank" ng-href="{{result.song.url}}"> <h1 ng-show= "result != undefined">{{result.song.name}} by {{result.artist.name}}</h1></a>
+<h3><a href="/">Back to search page</h3></a>
+<p ng-show = "result != undefined"><br>
+	<section>
+			<img ng-src="{{result.artist.image_url}}"></img>
+			<br><br>
+	
+		<div>
+		<br><span ng-bind-html="trustAsHtml('Artist: ' + result.artist.name)"></span>
+			<details>
+			<p ng-bind-html="trustAsHtml(result.artist.bio)"></p>
+				<summary ng-bind-html="trustAsHtml('Bio:')"></summary>
+			</details>
+			<br>
+		</div>
+
+		<div>
+			<br><span ng-bind-html="trustAsHtml('Album: ' + result.album.name)"></span>
+			<details>
+			<img id="albumImage" ng-src="{{result.album.image_url}}">
+			<p ng-bind-html="trustAsHtml(result.album.description)"></p>
+				<summary ng-bind-html="trustAsHtml('Album Info:')"></summary>
+			</details>
+			<br>
+		</div>
+
+		<div>
+			<details>
+			<summary ng-bind-html="trustAsHtml('Track List:')"></summary>
+			<ol id="track_list">
+				<a ng-repeat="track in result.track_list" ng-href= "/{{track.name}}/{{track.id}}"><li ng-bind-html="trustAsHtml(track.name)">
+				</li><br></a>
+				<span ng-bind-html="trustAsHtml('<br>' + result.track.description)"></span>
+			</ol>
+			</details>
+			<br>
+		</div>
+
+	</section>
+</p>
+	</div>

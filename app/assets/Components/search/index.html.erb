@@ -1,23 +1,25 @@
-<h1>TuneCore Album Index</h1>
+<%= stylesheet_link_tag  'index' %>
+<section id="section_1">
+<h1 id="header">TuneCore Album Index</h1>
+	<form ng-submit="submit(formData)">
+		<span>Artist:</span><br>
+		<input type="text" ng-model="formData.artist" name="artist" placeholder="Enter an artist's name">
+		<br>
+		<span>Song:</span><br>
+		<input type="text" ng-model="formData.song" name="song" placeholder="Enter name of song"><br>
+		<span>Album:</span><br>
+		<input type="text" ng-model="formData.album" name="album" placeholder="Enter Album name"><br>
+		<input type="submit" value="Search">
+	</form>
+</section>
 
-<form ng-submit="submit(formData)">
-	<span>Artist:</span><br>
-	<input type="text" ng-model="formData.artist" name="artist" placeholder="Enter an artist's name">
-	<br>
-	<span>Song:</span><br>
-	<input type="text" ng-model="formData.song" name="song" placeholder="Enter the name of a Song"><br>
-	<span>Album:</span><br>
-	<input type="text" ng-model="formData.album" name="album" placeholder="Enter the name of an Album"><br>
-	<input type="submit" value="Search">
-</form>
-
-<ol>
+<ol id="section_2">
 	<section ng-repeat="result in songs" ng-model="songs" ng-show="songs.length > 0">
-			<a ng-href="/{{result.song.id}}"></a> <li  ng-bind="'Song: ' + result.song.name"></li>	
+			<a ng-href="/{{result.song.name}}/{{result.song.id}}"><li ng-bind="'Song: ' + result.song.name"></li></a> 	
 		<details>
-			<summary ng-bind="song.description"></summary>
-			<span  ng-bind="'Artist: ' + result.artist.name"> </span><br>
+			<summary ng-bind="'Artist: ' + result.artist.name"></summary>
 			<span ng-bind="'Album: ' + result.album.name"></span><br><br>
 		</details>
+		<br>
 	</section>
 </ol>

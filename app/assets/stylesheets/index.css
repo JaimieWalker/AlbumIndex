@@ -1,0 +1,37 @@
+body{
+	color: white;
+	background: 
+    /* top, transparent red, faked with gradient */ 
+    linear-gradient(
+      rgba(100, 100, 100, .67), 
+      rgba(100, 100, 100, .67)
+    ),
+    /* bottom, image */
+    url("music.jpeg") no-repeat center center fixed;
+    width: 95%;
+
+}
+a{
+	color: lightblue;
+}
+#bgImage{
+	height: 100vh;
+	width: auto;
+	position: fixed;
+}
+
+#section_1{
+	background-color: rgba(0, 0, 0, 0.5);
+}
+#section_2{
+	background-color: rgba(0, 0, 0, .2);
+	text-align: justify;
+}
+
+#header{
+	text-align: center;
+	position: relative;
+}
+form{
+	text-align: center;
+}

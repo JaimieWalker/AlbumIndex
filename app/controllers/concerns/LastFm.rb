@@ -106,9 +106,12 @@ def add_tracks_to_db(songs)
 			arr = songs["results"]["trackmatches"]["track"]
 			arr.each do |song|
 				artist = create_artist(song["artist"])
+				next if artist.class == String
+						
 				song_info = get_song_info(song["name"],artist.name)
 				if !song_info["error"] && song_info["track"]["album"]
 					album_name = song_info["track"]["album"]["title"]
+					
 					album = create_album(album_name,artist.name)
 					tracks << create_song(song["name"],artist,album)
 				end
@@ -122,7 +125,8 @@ def add_tracks_to_db(songs)
 		if !song_info["error"] && song
 			ar_song = Song.find_or_create_by(name: song, artist_id: artist.id, album_id: album.id) do |current_song|
 				current_song.mbid = song_info["track"]["mbid"]
-					current_song.image_url = album.image_url
+				current_song.url = song_info["track"]["url"]
+				current_song.image_url = album.image_url
 				if s = song_info["track"]["wiki"]
 					current_song.description = s["content"]	
 				end
@@ -284,11 +288,11 @@ def add_albums_to_db(albums)
 		elsif @params["artist"]
 			songs = find_songs_by_artist
 		end
-		results = songs_to_json(songs.to_a.uniq)
+		results = LastFM.songs_to_json(songs.to_a.uniq)
 		return  results
 	end
 
-	def songs_to_json(songs)
+	def self.songs_to_json(songs)
 		data = []
 		songs.each do |song|
 			 data << {"song" => song, 
