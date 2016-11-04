@@ -8,23 +8,7 @@ class LastFM < ApplicationController
 	def initialize(api_key,request)
 		@base_url = "http://ws.audioscrobbler.com/2.0/?api_key=#{api_key}&format=json"
 		@request = request
-
 		@params = request.params
-		# Thread.new do
-		# 	ActiveRecord::Base.transaction do
-		# 		if !@params["artist"].nil? && @params["artist"].size > 0
-		# 			 add_artists_to_db(search_artists)
-					 
-		# 		end
-		# 		if !@params["song"].nil? && @params["song"].size > 0
-		# 			 add_tracks_to_db(search_songs)
-		# 		end
-
-		# 		if !@params["album"].nil? && @params["album"].size > 0
-		# 			 add_albums_to_db(search_albums)
-		# 		end
-		# 	end
-		# end
 	end
 
 	# Searches all songs and takes either an artist passed in or the artist that was passed in from the request, returns a json of artists
@@ -36,7 +20,6 @@ class LastFM < ApplicationController
 		response = api_request(api_url)
 		json_artists = JSON.parse(response.body)
 		if !json_artists["error"]
-			# Thread.new {add_artists_to_db(json_artists)} 
 			return json_artists
 		else
 			return nil
@@ -55,6 +38,7 @@ def create_artist(artist)
 	end
 	return artist
 end
+
 # Just makes an api call to artist.getinfo and returns the JSON parsed result
 def artist_get_info(artist)
 	autocorrect = "&autocorrect=1"
@@ -91,7 +75,6 @@ def search_songs(song = @params["song"])
 	response = api_request(api_url)
 	json_songs = JSON.parse(response.body)
 	if (!json_songs["error"])
-		# Thread.new  {add_tracks_to_db(json_songs)}
 		return json_songs
 	else 
 		return nil
@@ -119,6 +102,7 @@ def add_tracks_to_db(songs)
 		end
 		return tracks.uniq
 	end
+
 	# takes an active record artist, album and a string song name
 	def create_song(song,artist,album)
 		song_info = get_song_info(song,artist.name)
@@ -133,7 +117,6 @@ def add_tracks_to_db(songs)
 			end
 		end
 		album.songs << ar_song if !album.songs.include?(ar_song)
-			
 		return ar_song
 	end
 	
@@ -168,12 +151,12 @@ def add_tracks_to_db(songs)
 		response = api_request(api_url)
 		json_albums = JSON.parse(response.body)
 		if !json_albums["error"]
-			# Thread.new {add_albums_to_db(json_albums)} 
 			return json_albums
 		else
 			return nil
 		end
 	end
+
 # Takes a last fm list of albums
 def add_albums_to_db(albums)
 	albums_list = []
@@ -186,6 +169,7 @@ def add_albums_to_db(albums)
 		# Returns a list of albums
 		return albums_list.uniq
 	end
+
 # returns a HTTP response object
 	def api_request(api_url)
 		http = Net::HTTP.new(api_url.host, api_url.port);
