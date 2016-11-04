@@ -1,0 +1,20 @@
+html{
+}
+body{
+	width: 100%
+}
+.content{
+	text-align: center;
+	text-justify: auto;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+#track_list{
+	margin: auto;
+	position: relative;
+	width: 50%;
+	text-align: left;
+}
+li{
+
+}

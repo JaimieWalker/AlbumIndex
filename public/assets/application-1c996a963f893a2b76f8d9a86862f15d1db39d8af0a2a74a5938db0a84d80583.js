@@ -44206,6 +44206,7 @@ angular.module("templates", []);
 var app = angular.module("Tune_Core_Search",
 	["ngResource","ui.router","templates"]);
 
+
 app.config(function($stateProvider, $urlRouterProvider, $locationProvider){
 	$locationProvider.html5Mode(true);
 	$stateProvider
@@ -44213,40 +44214,99 @@ app.config(function($stateProvider, $urlRouterProvider, $locationProvider){
 			url: '/',
 			templateUrl: "search/index.html",
 			controller: "searchCtrl"
+		}).state("show",{
+			controller: "showCtrl",
+			url: "/{name}/{id}",
+			templateUrl: "search/result.html"
 		})
 
 })
 ;
 // Angular Rails Template
-// source: app/assets/Components/search/_results.html.erb
-
-angular.module("templates").run(["$templateCache", function($templateCache) {
-  $templateCache.put("search/_results.html", "")
-}]);
-
-// Angular Rails Template
 // source: app/assets/Components/search/index.html.erb
 
 angular.module("templates").run(["$templateCache", function($templateCache) {
-  $templateCache.put("search/index.html", '<h1>TuneCore Album Index</h1>\n\n<form ng-submit="submit(formData)">\n	<span>Artist:</span><br>\n	<input type="text" ng-model="formData.artist" name="artist" placeholder="Enter an artist\'s name">\n	<br>\n	<span>Song:</span><br>\n	<input type="text" ng-model="formData.song" name="song" placeholder="Enter the name of a Song"><br>\n	<span>Album:</span><br>\n	<input type="text" ng-model="formData.album" name="album" placeholder="Enter the name of an Album"><br>\n	<input type="submit" value="Search">\n</form>')
+  $templateCache.put("search/index.html", '<link rel="stylesheet" media="screen" href="/assets/index-152792af1c53e6b992b545353fc10cb2582fe0a337be473284089329b62e62b3.css" /><section id="section_1">\n<h1 id="header">TuneCore Album Index</h1>\n	<form ng-submit="submit(formData)">\n		<span>Artist:</span><br>\n		<input type="text" ng-model="formData.artist" name="artist" placeholder="Enter an artist\'s name">\n		<br>\n		<span>Song:</span><br>\n		<input type="text" ng-model="formData.song" name="song" placeholder="Enter name of song"><br>\n		<span>Album:</span><br>\n		<input type="text" ng-model="formData.album" name="album" placeholder="Enter Album name"><br>\n		<input type="submit" value="Search">\n	</form>\n</section>\n\n<ol id="section_2">\n	<section ng-repeat="result in songs" ng-model="songs" ng-show="songs.length > 0">\n			<a ng-href="/{{result.song.name}}/{{result.song.id}}"><li ng-bind="\'Song: \' + result.song.name"></li></a> 	\n		<details>\n			<summary ng-bind="\'Artist: \' + result.artist.name"></summary>\n			<span ng-bind="\'Album: \' + result.album.name"></span><br><br>\n		</details>\n		<br>\n	</section>\n</ol>')
+}]);
+
+// Angular Rails Template
+// source: app/assets/Components/search/result.html.erb
+
+angular.module("templates").run(["$templateCache", function($templateCache) {
+  $templateCache.put("search/result.html", '<link rel="stylesheet" media="screen" href="/assets/show-29c4ed382de1388ea7b920713d4be2a4c508122cceb12e80a385a1112ffd2915.css" />\n	<div class="content">\n		\n<a target="_blank" ng-href="{{result.song.url}}"> <h1 ng-show= "result != undefined">{{result.song.name}} by {{result.artist.name}}</h1></a>\n<h3><a href="/">Back to search page</h3></a>\n<p ng-show = "result != undefined"><br>\n	<section>\n			<img ng-src="{{result.artist.image_url}}"></img>\n			<br><br>\n	\n		<div>\n		<br><span ng-bind-html="trustAsHtml(\'Artist: \' + result.artist.name)"></span>\n			<details>\n			<p ng-bind-html="trustAsHtml(result.artist.bio)"></p>\n				<summary ng-bind-html="trustAsHtml(\'Bio:\')"></summary>\n			</details>\n			<br>\n		</div>\n\n		<div>\n			<br><span ng-bind-html="trustAsHtml(\'Album: \' + result.album.name)"></span>\n			<details>\n			<img id="albumImage" ng-src="{{result.album.image_url}}">\n			<p ng-bind-html="trustAsHtml(result.album.description)"></p>\n				<summary ng-bind-html="trustAsHtml(\'Album Info:\')"></summary>\n			</details>\n			<br>\n		</div>\n\n		<div>\n			<details>\n			<summary ng-bind-html="trustAsHtml(\'Track List:\')"></summary>\n			<ol id="track_list">\n				<a ng-repeat="track in result.track_list" ng-href= "/{{track.name}}/{{track.id}}"><li ng-bind-html="trustAsHtml(track.name)">\n				</li><br></a>\n				<span ng-bind-html="trustAsHtml(\'<br>\' + result.track.description)"></span>\n			</ol>\n			</details>\n			<br>\n		</div>\n\n	</section>\n</p>\n	</div>')
 }]);
 
 angular.module("Tune_Core_Search")
-	.controller("searchCtrl", function($scope){
+	.controller("searchCtrl", function($scope,musicService){
+		$scope.index = 0;
+
+
+		if (musicService.getTracks().length === 0) {
+			$.ajax({
+				method: "GET",
+				url: "/random",
+				dataType: "json",
+				success : function(data){
+					musicService.setMusic(data);
+					if (musicService.getTracks().length > 0) {
+					}
+					 $scope.songs = musicService.getTracks();
+					 $scope.$apply()
+				},
+				error : function(data){
+					alert("Track wasn't found")
+				}
+			})
+		}else {
+			$scope.songs = musicService.getTracks()
+		}
+		
+
 
 		$scope.submit = function(formData){
 			$.ajax({
 				method: "GET",
 				url: "/resource",
 				dataType: "json",
-				data: formData
+				data: formData,
+				success : function(data){
+					musicService.setMusic(data);
+					 $scope.songs = musicService.getTracks();
+					 $scope.$apply()
+				},
+				error : function(data){
+					alert("Track wasn't found")
+				}
 			})
+
 
 		}
 	});
 
 
 	
+angular.module("Tune_Core_Search")
+	.controller("showCtrl", function($scope,musicService,$stateParams,$sce){
+		$scope.trustAsHtml = function(html) {
+	      return $sce.trustAsHtml(html);
+	    }
+		$.ajax({
+				method: "GET",
+				url: "/show",
+				dataType: "json",
+				data: $stateParams,
+				success : function(data){
+					$scope.result = data;
+					$scope.$apply();
+				},
+				error : function(data){
+					alert("Track wasn't found")
+				}
+			})
+
+
+	})
+;
 /**
  * State-based routing for AngularJS
  * @version v0.2.18
@@ -44859,6 +44919,29 @@ J.$inject=["$state"],K.$inject=["$state"],b.module("ui.router.state").filter("is
   App.cable = ActionCable.createConsumer();
 
 }).call(this);
+angular.module("Tune_Core_Search")
+	.factory("musicService", function(){
+		var music = {"tracks" : [],
+						"index" : 0}
+		var musicService = {
+
+			getTracks : function(){
+				return music.tracks
+			},
+			getIndex : function(){
+				return music.index
+			},
+			setMusic : function(songs, index){
+				!index ? index = 0 : index 
+				music.tracks = songs
+				music.index = index
+				return music
+			}
+
+		}
+		return musicService
+	})
+;
 // This is a manifest file that'll be compiled into application.js, which will include all the files
 // listed below.
 //

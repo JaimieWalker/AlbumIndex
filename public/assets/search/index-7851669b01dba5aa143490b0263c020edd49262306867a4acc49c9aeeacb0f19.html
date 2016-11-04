@@ -1,0 +1,24 @@
+<link rel="stylesheet" media="screen" href="/assets/index-152792af1c53e6b992b545353fc10cb2582fe0a337be473284089329b62e62b3.css" /><section id="section_1">
+<h1 id="header">TuneCore Album Index</h1>
+	<form ng-submit="submit(formData)">
+		<span>Artist:</span><br>
+		<input type="text" ng-model="formData.artist" name="artist" placeholder="Enter an artist's name">
+		<br>
+		<span>Song:</span><br>
+		<input type="text" ng-model="formData.song" name="song" placeholder="Enter name of song"><br>
+		<span>Album:</span><br>
+		<input type="text" ng-model="formData.album" name="album" placeholder="Enter Album name"><br>
+		<input type="submit" value="Search">
+	</form>
+</section>
+
+<ol id="section_2">
+	<section ng-repeat="result in songs" ng-model="songs" ng-show="songs.length > 0">
+			<a ng-href="/{{result.song.name}}/{{result.song.id}}"><li ng-bind="'Song: ' + result.song.name"></li></a> 	
+		<details>
+			<summary ng-bind="'Artist: ' + result.artist.name"></summary>
+			<span ng-bind="'Album: ' + result.album.name"></span><br><br>
+		</details>
+		<br>
+	</section>
+</ol>

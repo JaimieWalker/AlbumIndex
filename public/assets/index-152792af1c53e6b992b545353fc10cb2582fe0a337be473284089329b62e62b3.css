@@ -1,0 +1,40 @@
+/* line 1, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+body {
+  color: white;
+  background: linear-gradient(rgba(100, 100, 100, 0.67), rgba(100, 100, 100, 0.67)), url(/assets/music-9d4165ddca24bbc847660e227c87a1822f55a80750d27284132c8983ed8ad233.jpg) no-repeat center center fixed;
+  width: 95%;
+}
+
+/* line 14, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+a {
+  color: lightblue;
+}
+
+/* line 17, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+#bgImage {
+  height: 100vh;
+  width: auto;
+  position: fixed;
+}
+
+/* line 23, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+#section_1 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* line 26, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+#section_2 {
+  background-color: rgba(0, 0, 0, 0.2);
+  text-align: justify;
+}
+
+/* line 31, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+#header {
+  text-align: center;
+  position: relative;
+}
+
+/* line 35, C:/Users/Raze King/CodingPractice/TuneCoreSearch/app/assets/stylesheets/index.css.scss.erb */
+form {
+  text-align: center;
+}
